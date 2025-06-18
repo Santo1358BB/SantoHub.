@@ -78,7 +78,7 @@ resetSpeedBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Fly (anh chèn code riêng)
+-- Fly 
 flyBtn.MouseButton1Click:Connect(function()
 	local main = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
@@ -557,25 +557,41 @@ end)
 end)
 
 -- Auto Pick Up
-local autoPickUp = false
-autoPickUpBtn.MouseButton1Click:Connect(function()
-	autoPickUp = not autoPickUp
-	autoPickUpBtn.Text = "Auto Pick Up: " .. (autoPickUp and "ON" or "OFF")
+local autoPickUpActive = false
+local autoPickUpThread = nil
 
-	if autoPickUp then
-		coroutine.wrap(function()
-			while autoPickUp do
-				for _, obj in pairs(workspace:GetDescendants()) do
-					if obj:IsA("ProximityPrompt") and (obj.Parent.Position - player.Character.HumanoidRootPart.Position).Magnitude < 10 then
-						fireproximityprompt(obj, 0)
+autoPickUpBtn.MouseButton1Click:Connect(function()
+	autoPickUpActive = not autoPickUpActive
+	autoPickUpBtn.Text = autoPickUpActive and "Auto Pick Up: ON" or "Auto Pick Up: OFF"
+
+	if autoPickUpActive then
+		autoPickUpThread = task.spawn(function()
+			while autoPickUpActive do
+				local character = player.Character
+				if character then
+					local root = character:FindFirstChild("HumanoidRootPart")
+					if root then
+						for _, obj in pairs(workspace:GetDescendants()) do
+							if obj:IsA("ProximityPrompt") and obj.Enabled then
+								local distance = (obj.Parent.Position - root.Position).Magnitude
+								if distance <= obj.MaxActivationDistance then
+									fireproximityprompt(obj)
+									task.wait(0.1) -- giữ 1 tí cho mượt
+								end
+							end
+						end
 					end
 				end
 				task.wait(0.1)
 			end
-		end)()
+		end)
+	else
+		if autoPickUpThread then
+			task.cancel(autoPickUpThread)
+			autoPickUpThread = nil
+		end
 	end
 end)
-
 -- Godmode
 local godMode = false
 godBtn.MouseButton1Click:Connect(function()
