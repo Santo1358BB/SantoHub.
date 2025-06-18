@@ -1,49 +1,36 @@
--- Santo Hub UI đơn giản
--- Đặt trong LocalScript (StarterPlayer > StarterPlayerScripts)
-
 local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local mouse = player:GetMouse()
 
--- Tạo giao diện chính
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SantoHub"
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.Parent = playerGui
+-- UI chính
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "SantoHub"
 
--- Khung chứa các nút
-local frame = Instance.new("Frame")
+local frame = Instance.new("Frame", gui)
 frame.Size = UDim2.new(0, 200, 0, 270)
-frame.Position = UDim2.new(1, -210, 0, 50)
-frame.BackgroundColor3 = Color3.new(0, 0, 0) -- nền đen
-frame.BorderColor3 = Color3.new(1, 0, 0) -- viền đỏ
+frame.Position = UDim2.new(1, -210, 0, 100)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.BorderColor3 = Color3.fromRGB(255, 0, 0)
 frame.BorderSizePixel = 2
-frame.Parent = screenGui
 
--- Tên Santo Hub (hiển thị ở góc)
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -10, 0, 25)
-title.Position = UDim2.new(0, 5, 0, 0)
+local title = Instance.new("TextLabel", frame)
 title.Text = "Santo Hub"
-title.TextColor3 = Color3.new(1, 1, 1)
+title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(255, 0, 0)
 title.Font = Enum.Font.SourceSansBold
-title.TextSize = 18
-title.TextXAlignment = Enum.TextXAlignment.Right
-title.Parent = frame
+title.TextSize = 20
 
--- Hàm tạo nút
-local function createButton(text, yOffset)
-	local button = Instance.new("TextButton")
-	button.Size = UDim2.new(1, -20, 0, 30)
-	button.Position = UDim2.new(0, 10, 0, yOffset)
-	button.Text = text
-	button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	button.TextColor3 = Color3.new(1, 1, 1)
-	button.Font = Enum.Font.SourceSansBold
-	button.TextSize = 16
-	button.Parent = frame
-	return button
+-- Tạo nút
+local function createButton(text, y)
+	local btn = Instance.new("TextButton", frame)
+	btn.Size = UDim2.new(1, -10, 0, 30)
+	btn.Position = UDim2.new(0, 5, 0, y)
+	btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Font = Enum.Font.SourceSans
+	btn.TextSize = 18
+	btn.Text = text
+	return btn
 end
 
 -- Tạo các nút
@@ -51,14 +38,13 @@ local collapseBtn = createButton("Đóng", 30)
 local speedBtn = createButton("Speed", 70)
 local resetSpeedBtn = createButton("Reset Speed", 110)
 local flyBtn = createButton("Fly", 150)
-local autoPickUpBtn = createButton("Auto Pick Up", 190)
-local godBtn = createButton("Godmode", 230)
+local autoPickUpBtn = createButton("Auto Pick Up: OFF", 190)
+local godBtn = createButton("Godmode: OFF", 230)
 
--- Đóng / mở UI
+-- Ẩn hiện UI
 local isOpen = true
-local function toggleUI()
+collapseBtn.MouseButton1Click:Connect(function()
 	isOpen = not isOpen
-
 	speedBtn.Visible = isOpen
 	resetSpeedBtn.Visible = isOpen
 	flyBtn.Visible = isOpen
@@ -73,29 +59,27 @@ local function toggleUI()
 		frame.Size = UDim2.new(0, 100, 0, 40)
 		collapseBtn.Text = "Mở"
 	end
-end
-collapseBtn.MouseButton1Click:Connect(toggleUI)
+end)
 
--- Logic Speed
-local currentSpeed = 16
+-- Speed
+local walkSpeed = 16
 speedBtn.MouseButton1Click:Connect(function()
-	currentSpeed += 5
+	walkSpeed += 5
 	if player.Character and player.Character:FindFirstChild("Humanoid") then
-		player.Character.Humanoid.WalkSpeed = currentSpeed
+		player.Character.Humanoid.WalkSpeed = walkSpeed
 	end
 end)
 
 -- Reset Speed
 resetSpeedBtn.MouseButton1Click:Connect(function()
-	currentSpeed = 16
+	walkSpeed = 16
 	if player.Character and player.Character:FindFirstChild("Humanoid") then
-		player.Character.Humanoid.WalkSpeed = currentSpeed
+		player.Character.Humanoid.WalkSpeed = walkSpeed
 	end
 end)
 
--- Fly Mode (tuỳ chỉnh sau)
+-- Fly (anh chèn code riêng)
 flyBtn.MouseButton1Click:Connect(function()
-	
 	local main = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 local up = Instance.new("TextButton")
@@ -572,24 +556,40 @@ mini2.MouseButton1Click:Connect(function()
 end)
 end)
 
--- Auto Pick Up (tự động nhặt đồ gần nhất)
+-- Auto Pick Up
+local autoPickUp = false
 autoPickUpBtn.MouseButton1Click:Connect(function()
-	print("Auto Pick Up bật")
-	-- Chèn hệ thống nhặt đồ tại đây nếu cần
+	autoPickUp = not autoPickUp
+	autoPickUpBtn.Text = "Auto Pick Up: " .. (autoPickUp and "ON" or "OFF")
+
+	if autoPickUp then
+		coroutine.wrap(function()
+			while autoPickUp do
+				for _, obj in pairs(workspace:GetDescendants()) do
+					if obj:IsA("ProximityPrompt") and (obj.Parent.Position - player.Character.HumanoidRootPart.Position).Magnitude < 10 then
+						fireproximityprompt(obj, 0)
+					end
+				end
+				task.wait(0.1)
+			end
+		end)()
+	end
 end)
 
--- Godmode (không chết, không mất máu)
+-- Godmode
+local godMode = false
 godBtn.MouseButton1Click:Connect(function()
-	print("Godmode bật")
-	local char = player.Character
-	if char then
-		local humanoid = char:FindFirstChildOfClass("Humanoid")
-		if humanoid then
-			humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-				humanoid.Health = humanoid.MaxHealth -- luôn đầy máu
+	godMode = not godMode
+	godBtn.Text = "Godmode: " .. (godMode and "ON" or "OFF")
+
+	if godMode and player.Character then
+		local hum = player.Character:FindFirstChildWhichIsA("Humanoid")
+		if hum then
+			hum:GetPropertyChangedSignal("Health"):Connect(function()
+				hum.Health = hum.MaxHealth
 			end)
-			humanoid.Health = humanoid.MaxHealth
-			humanoid.MaxHealth = 999999 -- đảm bảo không chết
+			hum.MaxHealth = 999999
+			hum.Health = hum.MaxHealth
 		end
 	end
 end)
