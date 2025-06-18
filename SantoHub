@@ -639,21 +639,28 @@ end)
 
 -- GODMODE
 local godMode = false
+
 godBtn.MouseButton1Click:Connect(function()
 	godMode = not godMode
 	godBtn.Text = godMode and "Godmode: ON" or "Godmode"
 
-	if godMode and player.Character then
-		local hum = player.Character:FindFirstChildWhichIsA("Humanoid")
+	local character = player.Character
+	if godMode and character then
+		local hum = character:FindFirstChildWhichIsA("Humanoid")
 		if hum then
-			hum:GetPropertyChangedSignal("Health"):Connect(function()
-				if godMode then hum.Health = hum.MaxHealth end
-			end)
-			hum.MaxHealth = 999999
+			hum.MaxHealth = 1e6
 			hum.Health = hum.MaxHealth
 			hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+
+			-- Tự hồi máu khi bị mất
+			hum:GetPropertyChangedSignal("Health"):Connect(function()
+				if godMode and hum.Health < hum.MaxHealth then
+					hum.Health = hum.MaxHealth
+				end
+			end)
 		end
 	end
 end)
+
 
 
