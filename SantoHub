@@ -1,167 +1,92 @@
 local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
--- Tạo GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SantoHubGui"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = player:WaitForChild("PlayerGui")
+-- Tạo UI chính
+local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+screenGui.Name = "SantoHub"
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 270)
-frame.Position = UDim2.new(0, 20, 0, 20)
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0, 200, 0, 350)
+frame.Position = UDim2.new(1, -210, 0, 50)
 frame.BackgroundColor3 = Color3.new(0, 0, 0)
-frame.BorderSizePixel = 3
 frame.BorderColor3 = Color3.new(1, 0, 0)
-frame.Parent = screenGui
+frame.BorderSizePixel = 2
 
--- Tiêu đề "Santo Hub"
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(0, 100, 0, 20)
-title.Position = UDim2.new(1, -105, 0, 0)
-title.BackgroundTransparency = 1
+local title = Instance.new("TextLabel", frame)
 title.Text = "Santo Hub"
-title.TextColor3 = Color3.new(1, 1, 1)
 title.Font = Enum.Font.SourceSansBold
-title.TextSize = 16
+title.TextSize = 18
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Position = UDim2.new(1, -105, 0, 5)
+title.Size = UDim2.new(0, 100, 0, 20)
+title.BackgroundTransparency = 1
 title.TextXAlignment = Enum.TextXAlignment.Right
-title.Parent = frame
 
--- Hàm tạo nút
+-- Tạo nút helper
 local function createButton(text, posY)
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, -20, 0, 30)
+	local btn = Instance.new("TextButton", frame)
+	btn.Size = UDim2.new(0, 180, 0, 30)
 	btn.Position = UDim2.new(0, 10, 0, posY)
-	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	btn.TextColor3 = Color3.new(1, 1, 1)
 	btn.Text = text
-	btn.Font = Enum.Font.SourceSansBold
-	btn.TextSize = 18
-	btn.Parent = frame
+	btn.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.Font = Enum.Font.SourceSans
+	btn.TextSize = 16
+	btn.BorderSizePixel = 0
 	return btn
 end
 
--- Nút "Đóng" đầu tiên
+-- Các nút
 local collapseBtn = createButton("Đóng", 0)
-local speedBtn = createButton("Speed", 35)
-local resetSpeedBtn = createButton("Reset Speed", 75)
-local flyBtn = createButton("Fly", 115)
-local autoPickupBtn = createButton("Auto Pick Up", 155)
-local godBtn = createButton("Godmode", 195)
-local autoEBtn = createButton("Auto E", 235)
--- Biến kiểm soát UI
-local isOpen = true
+local speedBtn = createButton("Speed", 40)
+local resetSpeedBtn = createButton("Reset Speed", 80)
+local flyBtn = createButton("Fly", 120)
+local autoPickUpBtn = createButton("Auto Pick Up", 160)
+local autoEBtn = createButton("Auto E", 200)
+local godBtn = createButton("Godmode", 240)
+local aimBtn = createButton("Aim", 280)
 
+-- Toggle UI
+local isOpen = true
 local function toggleUI()
 	isOpen = not isOpen
 	speedBtn.Visible = isOpen
 	resetSpeedBtn.Visible = isOpen
 	flyBtn.Visible = isOpen
 	autoPickUpBtn.Visible = isOpen
-  autoEBtn.Visible = isOpen
+	autoEBtn.Visible = isOpen
 	godBtn.Visible = isOpen
+	aimBtn.Visible = isOpen
 	title.Visible = isOpen
 
 	if isOpen then
-		frame.Size = UDim2.new(0, 200, 0, 270)
+		frame.Size = UDim2.new(0, 200, 0, 350)
 		collapseBtn.Text = "Đóng"
 	else
 		frame.Size = UDim2.new(0, 100, 0, 40)
 		collapseBtn.Text = "Mở"
 	end
 end
-
 collapseBtn.MouseButton1Click:Connect(toggleUI)
--- SPEED mới
-local defaultSpeed = 16
-local currentSpeed = defaultSpeed
 
+-- Speed tăng
+local walkSpeed = 16
 speedBtn.MouseButton1Click:Connect(function()
-	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-	if humanoid then
-		currentSpeed += 5
-		humanoid.WalkSpeed = currentSpeed
-		speedBtn.Text = "Speed: " .. tostring(currentSpeed)
-	end
+	walkSpeed += 5
+	player.Character.Humanoid.WalkSpeed = walkSpeed
 end)
 
 resetSpeedBtn.MouseButton1Click:Connect(function()
-	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-	if humanoid then
-		currentSpeed = defaultSpeed
-		humanoid.WalkSpeed = currentSpeed
-		speedBtn.Text = "Speed"
-	end
-end)
- -- Auto pick up
-local autoPickUpActive = false
-local autoPickUpThread = nil
-
-autoPickUpBtn.MouseButton1Click:Connect(function()
-	autoPickUpActive = not autoPickUpActive
-	autoPickUpBtn.Text = autoPickUpActive and "Auto Pick Up: ON" or "Auto Pick Up"
-
-	if autoPickUpActive then
-		autoPickUpThread = task.spawn(function()
-			while autoPickUpActive do
-				local character = player.Character
-				if character then
-					local root = character:FindFirstChild("HumanoidRootPart")
-					if root then
-						for _, prompt in pairs(workspace:GetDescendants()) do
-							if prompt:IsA("ProximityPrompt") and prompt.Enabled then
-								local parentPart = prompt.Parent:IsA("BasePart") and prompt.Parent or nil
-								if parentPart then
-									local distance = (parentPart.Position - root.Position).Magnitude
-									if distance <= prompt.MaxActivationDistance then
-										-- Giữ nhặt cho đến khi prompt biến mất hoặc tắt
-										while autoPickUpActive and prompt.Enabled and prompt.Parent do
-											fireproximityprompt(prompt)
-											task.wait(0.1)
-										end
-									end
-								end
-							end
-						end
-					end
-				end
-				task.wait(0.1)
-			end
-		end)
-	else
-		if autoPickUpThread then
-			task.cancel(autoPickUpThread)
-			autoPickUpThread = nil
-		end
-	end
-end)
- -- Auto E
-local autoEActive = false
-local autoEThread = nil
-
-autoEBtn.MouseButton1Click:Connect(function()
-	autoEActive = not autoEActive
-	autoEBtn.Text = autoEActive and "Auto E: ON" or "Auto E"
-
-	if autoEActive then
-		autoEThread = task.spawn(function()
-			local vim = game:GetService("VirtualInputManager")
-			while autoEActive do
-				vim:SendKeyEvent(true, Enum.KeyCode.E, false, nil)
-				vim:SendKeyEvent(false, Enum.KeyCode.E, false, nil)
-				task.wait(0.1) -- nhấn E mỗi 0.1 giây
-			end
-		end)
-	else
-		if autoEThread then
-			task.cancel(autoEThread)
-			autoEThread = nil
-		end
-	end
+	walkSpeed = 16
+	player.Character.Humanoid.WalkSpeed = walkSpeed
 end)
 
-
- -- FLY
-local main = Instance.new("ScreenGui")
+-- Fly
+local flying = false
+flyBtn.MouseButton1Click:Connect(function()
+	local main = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 local up = Instance.new("TextButton")
 local down = Instance.new("TextButton")
@@ -635,58 +560,60 @@ mini2.MouseButton1Click:Connect(function()
 	main.Frame.BackgroundTransparency = 0 
 	closebutton.Position =  UDim2.new(0, 0, -1, 27)
 end)
--- GODMODE
-local godModeActive = false
-local godModeTouchConns = {}
-local godModeHealthConn = nil
-local godModeDiedConn = nil
 
-local function setGodmode(enabled)
-	godModeActive = enabled
-	godBtn.Text = enabled and "Godmode: ON" or "Godmode"
+-- Auto Pick Up (giữ nhặt)
+local picking = false
+autoPickUpBtn.MouseButton1Click:Connect(function()
+	picking = not picking
+	autoPickUpBtn.Text = picking and "Auto Pick Up: ON" or "Auto Pick Up"
+end)
 
-	-- Dọn kết nối cũ
-	for _, conn in pairs(godModeTouchConns) do
-		conn:Disconnect()
-	end
-	table.clear(godModeTouchConns)
-
-	if godModeHealthConn then godModeHealthConn:Disconnect() end
-	if godModeDiedConn then godModeDiedConn:Disconnect() end
-	godModeHealthConn, godModeDiedConn = nil, nil
-
-	if enabled then
-		local character = player.Character or player.CharacterAdded:Wait()
-		local humanoid = character:WaitForChild("Humanoid")
-		local root = character:WaitForChild("HumanoidRootPart")
-
-		-- Không mất máu
-		godModeHealthConn = humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-			if humanoid.Health < humanoid.MaxHealth then
-				humanoid.Health = humanoid.MaxHealth
-			end
-		end)
-
-		-- Không chết
-		godModeDiedConn = humanoid.Died:Connect(function()
-			humanoid.Health = humanoid.MaxHealth
-		end)
-
-		-- Không bị chạm gây tác động
-		for _, part in pairs(workspace:GetDescendants()) do
-			if part:IsA("BasePart") then
-				local conn = part.Touched:Connect(function(hit)
-					if hit:IsDescendantOf(character) then
-						-- Không làm gì cả → miễn nhiễm
-					end
-				end)
-				table.insert(godModeTouchConns, conn)
+RunService.RenderStepped:Connect(function()
+	if picking then
+		local prompt = nil
+		for _, v in pairs(workspace:GetDescendants()) do
+			if v:IsA("ProximityPrompt") and (v.Parent.Position - player.Character.HumanoidRootPart.Position).Magnitude < 10 then
+				prompt = v
+				break
 			end
 		end
+		if prompt then
+			pcall(function() fireproximityprompt(prompt, true) end)
+		end
 	end
-end
-
--- Bấm nút để bật/tắt godmode
-godBtn.MouseButton1Click:Connect(function()
-	setGodmode(not godModeActive)
 end)
+
+-- Auto E (nhấn E liên tục)
+local autoE = false
+autoEBtn.MouseButton1Click:Connect(function()
+	autoE = not autoE
+	autoEBtn.Text = autoE and "Auto E: ON" or "Auto E"
+end)
+
+spawn(function()
+	while true do
+		wait(0.1)
+		if autoE then
+			pcall(function() keypress(Enum.KeyCode.E) end)
+		end
+	end
+end)
+
+-- Godmode
+godBtn.MouseButton1Click:Connect(function()
+	local char = player.Character or player.CharacterAdded:Wait()
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.MaxHealth = math.huge
+		hum.Health = math.huge
+		hum:GetPropertyChangedSignal("Health"):Connect(function()
+			hum.Health = math.huge
+		end)
+	end
+end)
+
+-- Aim (bắn cung dính)
+aimBtn.MouseButton1Click:Connect(function()
+	getgenv().SilentAim = true
+end)
+
