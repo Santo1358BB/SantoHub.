@@ -1,93 +1,122 @@
 local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+local UserInputService = game:GetService("UserInputService")
 
--- UI gốc
+-- UI Setup
 local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 screenGui.Name = "SantoHub"
+screenGui.ResetOnSpawn = false
 
--- Khung chính
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 310)
-frame.Position = UDim2.new(1, -210, 0, 40)
-frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-frame.BorderColor3 = Color3.fromRGB(255, 0, 0)
-frame.BorderSizePixel = 2
-frame.Parent = screenGui
+local scroll = Instance.new("ScrollingFrame", screenGui)
+scroll.Size = UDim2.new(0, 250, 0, 300)
+scroll.Position = UDim2.new(1, -260, 0.3, 0)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 600)
+scroll.BackgroundColor3 = Color3.new(0, 0, 0)
+scroll.BorderColor3 = Color3.new(1, 0, 0)
+scroll.ScrollBarThickness = 8
+scroll.Active = true
+scroll.ClipsDescendants = true
 
--- Tiêu đề
-local title = Instance.new("TextLabel")
-title.Text = "Santo Hub"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.BackgroundTransparency = 1
-title.Size = UDim2.new(1, -10, 0, 30)
-title.Position = UDim2.new(0, 5, 0, 5)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 20
-title.TextXAlignment = Enum.TextXAlignment.Right
-title.Parent = frame
+local uiListLayout = Instance.new("UIListLayout", scroll)
+uiListLayout.Padding = UDim.new(0, 5)
 
--- Scrollable content
-local scroll = Instance.new("ScrollingFrame")
-scroll.Position = UDim2.new(0, 0, 0, 35)
-scroll.Size = UDim2.new(1, 0, 1, -35)
-scroll.CanvasSize = UDim2.new(0, 0, 0, 500)
-scroll.ScrollBarThickness = 5
-scroll.BackgroundTransparency = 1
-scroll.Parent = frame
-
--- Hàm tạo nút
-local function createButton(text, posY)
+local function createButton(text)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, -10, 0, 30)
-	btn.Position = UDim2.new(0, 5, 0, posY)
+	btn.Size = UDim2.new(1, -10, 0, 40)
 	btn.Text = text
-	btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	btn.BorderSizePixel = 1
-	btn.Font = Enum.Font.SourceSans
+	btn.Font = Enum.Font.SourceSansBold
 	btn.TextSize = 18
+	btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	btn.BorderColor3 = Color3.new(1, 0, 0)
+	btn.TextColor3 = Color3.new(1, 1, 1)
 	btn.Parent = scroll
 	return btn
 end
 
--- Tạo các nút
-local collapseBtn = createButton("Đóng", 0)
-local speedBtn = createButton("Speed", 40)
-local resetSpeedBtn = createButton("Reset Speed", 80)
-local flyBtn = createButton("Fly", 120)
-local autoPickUpBtn = createButton("Auto Pick Up", 160)
-local autoEBtn = createButton("Auto E", 200)
-local godBtn = createButton("Godmode", 240)
+-- Santo Hub label
+local title = Instance.new("TextLabel", scroll)
+title.Size = UDim2.new(1, -10, 0, 30)
+title.Text = "Santo Hub"
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1, 1, 1)
 
--- Mở/đóng UI
+-- Thanh kéo UI
+local dragBar = Instance.new("Frame", scroll)
+dragBar.Size = UDim2.new(1, 0, 0, 30)
+dragBar.BackgroundTransparency = 1
+dragBar.ZIndex = 2
+
+local dragging = false
+local dragStart, startPos
+
+dragBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = scroll.Position
+	end
+end)
+
+dragBar.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		scroll.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- Collapse
+local collapseBtn = createButton("Đóng")
 local isOpen = true
 collapseBtn.MouseButton1Click:Connect(function()
 	isOpen = not isOpen
-	scroll.Visible = isOpen
-	title.Visible = isOpen
-	frame.Size = isOpen and UDim2.new(0, 200, 0, 310) or UDim2.new(0, 100, 0, 40)
+	for _, child in pairs(scroll:GetChildren()) do
+		if child:IsA("TextButton") and child ~= collapseBtn then
+			child.Visible = isOpen
+		end
+		if child:IsA("TextLabel") then
+			child.Visible = isOpen
+		end
+	end
+	scroll.Size = isOpen and UDim2.new(0, 250, 0, 300) or UDim2.new(0, 120, 0, 40)
 	collapseBtn.Text = isOpen and "Đóng" or "Mở"
 end)
 
--- SPEED
-local currentSpeed = 16
+-- Speed
+local speed = 16
+local speedBtn = createButton("Speed")
 speedBtn.MouseButton1Click:Connect(function()
 	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	if hum then
-		currentSpeed += 5
-		hum.WalkSpeed = currentSpeed
+		speed += 5
+		hum.WalkSpeed = speed
 	end
+	speedBtn.Text = "Speed: " .. speed
 end)
 
--- RESET SPEED
+-- Reset Speed
+local resetSpeedBtn = createButton("Reset Speed")
 resetSpeedBtn.MouseButton1Click:Connect(function()
 	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	if hum then
-		currentSpeed = 16
-		hum.WalkSpeed = currentSpeed
+		speed = 16
+		hum.WalkSpeed = speed
 	end
+	speedBtn.Text = "Speed"
 end)
 
--- FLY 
+-- Fly 
+local flyBtn = createButton("Fly")
 flyBtn.MouseButton1Click:Connect(function()
 	local main = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
@@ -565,7 +594,8 @@ mini2.MouseButton1Click:Connect(function()
 end)
 end)
 
--- AUTO PICK UP
+-- Auto Pick Up
+local autoPickUpBtn = createButton("Auto Pick Up")
 local autoPickUpActive = false
 local autoPickUpThread = nil
 
@@ -577,20 +607,21 @@ autoPickUpBtn.MouseButton1Click:Connect(function()
 		autoPickUpThread = task.spawn(function()
 			while autoPickUpActive do
 				local char = player.Character
-				if char then
-					local root = char:FindFirstChild("HumanoidRootPart")
-					if root then
-						for _, obj in pairs(workspace:GetDescendants()) do
-							if obj:IsA("ProximityPrompt") and obj.Enabled then
-								local dist = (obj.Parent.Position - root.Position).Magnitude
-								if dist <= obj.MaxActivationDistance then
-									fireproximityprompt(obj, 0)
+				local root = char and char:FindFirstChild("HumanoidRootPart")
+				if root then
+					for _, obj in pairs(workspace:GetDescendants()) do
+						if obj:IsA("ProximityPrompt") and obj.Enabled then
+							local dist = (obj.Parent.Position - root.Position).Magnitude
+							if dist <= obj.MaxActivationDistance then
+								while obj.Enabled and autoPickUpActive do
+									pcall(function()
+										fireproximityprompt(obj, 0)
+									end)
 								end
 							end
 						end
 					end
 				end
-				task.wait(0.1)
 			end
 		end)
 	else
@@ -601,7 +632,8 @@ autoPickUpBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- AUTO E
+-- Auto E
+local autoEBtn = createButton("Auto E")
 local autoEActive = false
 local autoEThread = nil
 
@@ -612,21 +644,10 @@ autoEBtn.MouseButton1Click:Connect(function()
 	if autoEActive then
 		autoEThread = task.spawn(function()
 			while autoEActive do
-				local char = player.Character
-				if char then
-					local root = char:FindFirstChild("HumanoidRootPart")
-					if root then
-						for _, obj in pairs(workspace:GetDescendants()) do
-							if obj:IsA("ProximityPrompt") and obj.Enabled then
-								local dist = (obj.Parent.Position - root.Position).Magnitude
-								if dist <= obj.MaxActivationDistance then
-									fireproximityprompt(obj, 0)
-								end
-							end
-						end
-					end
-				end
-				task.wait(0.09)
+				pcall(function()
+					keypress(0x45)
+					keyrelease(0x45)
+				end)
 			end
 		end)
 	else
@@ -637,7 +658,8 @@ autoEBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- GODMODE
+-- Godmode
+local godBtn = createButton("Godmode")
 local godMode = false
 
 godBtn.MouseButton1Click:Connect(function()
@@ -652,7 +674,6 @@ godBtn.MouseButton1Click:Connect(function()
 			hum.Health = hum.MaxHealth
 			hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
 
-			-- Tự hồi máu khi bị mất
 			hum:GetPropertyChangedSignal("Health"):Connect(function()
 				if godMode and hum.Health < hum.MaxHealth then
 					hum.Health = hum.MaxHealth
@@ -661,6 +682,33 @@ godBtn.MouseButton1Click:Connect(function()
 		end
 	end
 end)
+
+-- Aim
+local aimBtn = createButton("Aim")
+local aimActive = false
+aimBtn.MouseButton1Click:Connect(function()
+	aimActive = not aimActive
+	aimBtn.Text = aimActive and "Aim: ON" or "Aim"
+
+	if aimActive then
+		task.spawn(function()
+			while aimActive do
+				local target
+				for _, obj in ipairs(workspace:GetDescendants()) do
+					if obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") and obj ~= player.Character then
+						target = obj.HumanoidRootPart
+						break
+					end
+				end
+				if target then
+					mouse.TargetFilter = workspace
+					mouse.Hit = target.CFrame
+				end
+			end
+		end)
+	end
+end)
+
 
 
 
