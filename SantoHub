@@ -14,7 +14,6 @@ frame.BackgroundColor3 = Color3.new(0, 0, 0)
 frame.BorderColor3 = Color3.new(1, 0, 0)
 frame.Active = true
 
--- Santo Hub title
 local header = Instance.new("TextLabel", frame)
 header.Size = UDim2.new(1, 0, 0, 30)
 header.Position = UDim2.new(0, 0, 0, 0)
@@ -74,7 +73,7 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- Tạo nút
+-- Nút chức năng
 local collapseBtn = createButton("Đóng")
 local speedBtn = createButton("Speed")
 local resetSpeedBtn = createButton("Reset Speed")
@@ -669,7 +668,11 @@ godBtn.MouseButton1Click:Connect(function()
 		if hum then
 			hum.MaxHealth = 1e6
 			hum.Health = hum.MaxHealth
+			hum.BreakJointsOnDeath = false
+
 			hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+			hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+			hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
 
 			hum:GetPropertyChangedSignal("Health"):Connect(function()
 				if godMode and hum.Health < hum.MaxHealth then
