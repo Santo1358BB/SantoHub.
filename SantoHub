@@ -659,45 +659,28 @@ autoEBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Godmode
-llocal godMode = false
-
+local godMode = false
 godBtn.MouseButton1Click:Connect(function()
 	godMode = not godMode
 	godBtn.Text = godMode and "Godmode: ON" or "Godmode"
 
-	local char = player.Character
-	if godMode and char then
-		local hum = char:FindFirstChildWhichIsA("Humanoid")
+	local character = player.Character
+	if godMode and character then
+		local hum = character:FindFirstChildWhichIsA("Humanoid")
 		if hum then
-			-- Không bao giờ vào trạng thái chết
-			hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-			hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-			hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-			hum.BreakJointsOnDeath = false
-
 			hum.MaxHealth = 1e6
 			hum.Health = hum.MaxHealth
+			hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
 
-			-- Hồi máu tức thì nếu bị dính sát thương
 			hum:GetPropertyChangedSignal("Health"):Connect(function()
 				if godMode and hum.Health < hum.MaxHealth then
 					hum.Health = hum.MaxHealth
 				end
 			end)
-
-			-- Chặn bị BreakJoints
-			local root = char:FindFirstChild("HumanoidRootPart")
-			if root then
-				root:GetPropertyChangedSignal("Parent"):Connect(function()
-					if godMode and root.Parent == nil then
-						root.Parent = char
-					end
-				end)
-			end
 		end
 	end
 end)
+
 
 
 -- Aim
