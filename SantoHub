@@ -1,6 +1,6 @@
 local player = game.Players.LocalPlayer
 local mouse = player:GetMouse()
-local UserInputService = game:GetService("UserInputService")
+local UIS = game:GetService("UserInputService")
 
 -- UI Setup
 local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
@@ -9,19 +9,21 @@ screenGui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", screenGui)
 frame.Size = UDim2.new(0, 250, 0, 300)
-frame.Position = UDim2.new(1, -260, 0.15, 0) -- nằm cao hơn chút
+frame.Position = UDim2.new(1, -260, 0.15, 0)
 frame.BackgroundColor3 = Color3.new(0, 0, 0)
 frame.BorderColor3 = Color3.new(1, 0, 0)
 frame.Active = true
-frame.Draggable = true -- ✅ cho phép kéo toàn bộ bảng bằng chuột
 
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "Santo Hub"
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 20
-title.BackgroundTransparency = 1
-title.TextColor3 = Color3.new(1, 1, 1)
+-- Santo Hub
+local header = Instance.new("TextLabel", frame)
+header.Size = UDim2.new(1, 0, 0, 30)
+header.Position = UDim2.new(0, 0, 0, 0)
+header.Text = "Santo Hub"
+header.Font = Enum.Font.SourceSansBold
+header.TextSize = 20
+header.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+header.TextColor3 = Color3.new(1, 1, 1)
+header.BorderColor3 = Color3.new(1, 0, 0)
 
 local scroll = Instance.new("ScrollingFrame", frame)
 scroll.Size = UDim2.new(1, 0, 1, -30)
@@ -31,8 +33,8 @@ scroll.ScrollBarThickness = 8
 scroll.BackgroundTransparency = 1
 scroll.BorderSizePixel = 0
 
-local uiListLayout = Instance.new("UIListLayout", scroll)
-uiListLayout.Padding = UDim.new(0, 5)
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0, 5)
 
 local function createButton(text)
 	local btn = Instance.new("TextButton")
@@ -47,8 +49,41 @@ local function createButton(text)
 	return btn
 end
 
--- Collapse
+-- Kéo bảng UI
+local dragging = false
+local dragStart, startPos
+
+header.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+								   startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+-- Các nút chức năng
 local collapseBtn = createButton("Đóng")
+local speedBtn = createButton("Speed")
+local resetSpeedBtn = createButton("Reset Speed")
+local flyBtn = createButton("Fly")
+local autoPickUpBtn = createButton("Auto Pick Up")
+local autoEBtn = createButton("Auto E")
+local godBtn = createButton("Godmode")
+local aimBtn = createButton("Aim")
+
 local isOpen = true
 collapseBtn.MouseButton1Click:Connect(function()
 	isOpen = not isOpen
@@ -63,7 +98,6 @@ end)
 
 -- Speed
 local speed = 16
-local speedBtn = createButton("Speed")
 speedBtn.MouseButton1Click:Connect(function()
 	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	if hum then
@@ -73,8 +107,6 @@ speedBtn.MouseButton1Click:Connect(function()
 	speedBtn.Text = "Speed: " .. speed
 end)
 
--- Reset Speed
-local resetSpeedBtn = createButton("Reset Speed")
 resetSpeedBtn.MouseButton1Click:Connect(function()
 	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	if hum then
@@ -84,8 +116,7 @@ resetSpeedBtn.MouseButton1Click:Connect(function()
 	speedBtn.Text = "Speed"
 end)
 
--- Fly
-local flyBtn = createButton("Fly")
+-- Fly 
 flyBtn.MouseButton1Click:Connect(function()
 	local main = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
@@ -564,7 +595,6 @@ end)
 end)
 
 -- Auto Pick Up
-local autoPickUpBtn = createButton("Auto Pick Up")
 local autoPickUpActive = false
 local autoPickUpThread = nil
 
@@ -601,8 +631,7 @@ autoPickUpBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Auto E 
-local autoEBtn = createButton("Auto E")
+-- Auto E
 local autoEActive = false
 local autoEThread = nil
 
@@ -628,9 +657,7 @@ autoEBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Godmode
-local godBtn = createButton("Godmode")
 local godMode = false
-
 godBtn.MouseButton1Click:Connect(function()
 	godMode = not godMode
 	godBtn.Text = godMode and "Godmode: ON" or "Godmode"
@@ -653,7 +680,6 @@ godBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Aim
-local aimBtn = createButton("Aim")
 local aimActive = false
 aimBtn.MouseButton1Click:Connect(function()
 	aimActive = not aimActive
@@ -677,8 +703,5 @@ aimBtn.MouseButton1Click:Connect(function()
 		end)
 	end
 end)
-
-
-
 
 
