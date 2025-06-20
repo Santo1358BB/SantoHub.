@@ -7,15 +7,29 @@ local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 screenGui.Name = "SantoHub"
 screenGui.ResetOnSpawn = false
 
-local scroll = Instance.new("ScrollingFrame", screenGui)
-scroll.Size = UDim2.new(0, 250, 0, 300)
-scroll.Position = UDim2.new(1, -260, 0.3, 0)
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0, 250, 0, 300)
+frame.Position = UDim2.new(1, -260, 0.15, 0) -- nằm cao hơn chút
+frame.BackgroundColor3 = Color3.new(0, 0, 0)
+frame.BorderColor3 = Color3.new(1, 0, 0)
+frame.Active = true
+frame.Draggable = true -- ✅ cho phép kéo toàn bộ bảng bằng chuột
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "Santo Hub"
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1, 1, 1)
+
+local scroll = Instance.new("ScrollingFrame", frame)
+scroll.Size = UDim2.new(1, 0, 1, -30)
+scroll.Position = UDim2.new(0, 0, 0, 30)
 scroll.CanvasSize = UDim2.new(0, 0, 0, 600)
-scroll.BackgroundColor3 = Color3.new(0, 0, 0)
-scroll.BorderColor3 = Color3.new(1, 0, 0)
 scroll.ScrollBarThickness = 8
-scroll.Active = true
-scroll.ClipsDescendants = true
+scroll.BackgroundTransparency = 1
+scroll.BorderSizePixel = 0
 
 local uiListLayout = Instance.new("UIListLayout", scroll)
 uiListLayout.Padding = UDim.new(0, 5)
@@ -33,48 +47,6 @@ local function createButton(text)
 	return btn
 end
 
--- Santo Hub label
-local title = Instance.new("TextLabel", scroll)
-title.Size = UDim2.new(1, -10, 0, 30)
-title.Text = "Santo Hub"
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 20
-title.BackgroundTransparency = 1
-title.TextColor3 = Color3.new(1, 1, 1)
-
--- Thanh kéo UI
-local dragBar = Instance.new("Frame", scroll)
-dragBar.Size = UDim2.new(1, 0, 0, 30)
-dragBar.BackgroundTransparency = 1
-dragBar.ZIndex = 2
-
-local dragging = false
-local dragStart, startPos
-
-dragBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = scroll.Position
-	end
-end)
-
-dragBar.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = false
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
-		scroll.Position = UDim2.new(
-			startPos.X.Scale, startPos.X.Offset + delta.X,
-			startPos.Y.Scale, startPos.Y.Offset + delta.Y
-		)
-	end
-end)
-
 -- Collapse
 local collapseBtn = createButton("Đóng")
 local isOpen = true
@@ -84,11 +56,8 @@ collapseBtn.MouseButton1Click:Connect(function()
 		if child:IsA("TextButton") and child ~= collapseBtn then
 			child.Visible = isOpen
 		end
-		if child:IsA("TextLabel") then
-			child.Visible = isOpen
-		end
 	end
-	scroll.Size = isOpen and UDim2.new(0, 250, 0, 300) or UDim2.new(0, 120, 0, 40)
+	frame.Size = isOpen and UDim2.new(0, 250, 0, 300) or UDim2.new(0, 120, 0, 40)
 	collapseBtn.Text = isOpen and "Đóng" or "Mở"
 end)
 
@@ -115,7 +84,7 @@ resetSpeedBtn.MouseButton1Click:Connect(function()
 	speedBtn.Text = "Speed"
 end)
 
--- Fly 
+-- Fly
 local flyBtn = createButton("Fly")
 flyBtn.MouseButton1Click:Connect(function()
 	local main = Instance.new("ScreenGui")
@@ -632,7 +601,7 @@ autoPickUpBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Auto E
+-- Auto E 
 local autoEBtn = createButton("Auto E")
 local autoEActive = false
 local autoEThread = nil
@@ -708,6 +677,7 @@ aimBtn.MouseButton1Click:Connect(function()
 		end)
 	end
 end)
+
 
 
 
