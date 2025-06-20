@@ -14,7 +14,7 @@ frame.BackgroundColor3 = Color3.new(0, 0, 0)
 frame.BorderColor3 = Color3.new(1, 0, 0)
 frame.Active = true
 
--- Santo Hub
+-- Santo Hub title
 local header = Instance.new("TextLabel", frame)
 header.Size = UDim2.new(1, 0, 0, 30)
 header.Position = UDim2.new(0, 0, 0, 0)
@@ -49,7 +49,7 @@ local function createButton(text)
 	return btn
 end
 
--- Kéo bảng UI
+-- Kéo bảng
 local dragging = false
 local dragStart, startPos
 
@@ -74,7 +74,7 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- Các nút chức năng
+-- Tạo nút
 local collapseBtn = createButton("Đóng")
 local speedBtn = createButton("Speed")
 local resetSpeedBtn = createButton("Reset Speed")
@@ -616,11 +616,13 @@ autoPickUpBtn.MouseButton1Click:Connect(function()
 									pcall(function()
 										fireproximityprompt(obj, 0)
 									end)
+									task.wait(0.05)
 								end
 							end
 						end
 					end
 				end
+				task.wait(0.05)
 			end
 		end)
 	else
@@ -646,6 +648,7 @@ autoEBtn.MouseButton1Click:Connect(function()
 					keypress(0x45)
 					keyrelease(0x45)
 				end)
+				task.wait(0.05)
 			end
 		end)
 	else
@@ -699,9 +702,11 @@ aimBtn.MouseButton1Click:Connect(function()
 					mouse.TargetFilter = workspace
 					mouse.Hit = target.CFrame
 				end
+				task.wait(0.05)
 			end
 		end)
 	end
 end)
+
 
 
